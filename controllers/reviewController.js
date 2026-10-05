@@ -55,3 +55,14 @@ export const createReview = async (req, res) => {
     res.status(500).json({ message: err.message })
   }
 }
+
+// DELETE /api/reviews/:id  (admin only)
+export const deleteReview = async (req, res) => {
+  try {
+    const review = await Review.findByIdAndDelete(req.params.id)
+    if (!review) return res.status(404).json({ message: 'Review not found' })
+    res.json({ message: 'Review deleted', id: req.params.id })
+  } catch (err) {
+    res.status(500).json({ message: err.message })
+  }
+}
