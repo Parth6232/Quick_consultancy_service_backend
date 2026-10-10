@@ -1,8 +1,8 @@
-import Portfolio from '../models/Portfolio.js'
-import {
+const Portfolio = require('../models/Portfolio')
+const {
     uploadManyToCloudinary,
     deleteManyFromCloudinary,
-} from '../utils/cloudinaryUpload.js'
+} = require('../utils/cloudinaryUpload')
 
 // "existingImages" jaisi field JSON string me aati hai, usko safe tareeke se array banata hai
 const parseList = (value) => {
@@ -16,7 +16,7 @@ const parseList = (value) => {
 }
 
 // GET /api/portfolio
-export const getAllPortfolio = async (req, res) => {
+const getAllPortfolio = async (req, res) => {
     try {
         const items = await Portfolio.find().sort({ createdAt: -1 })
         res.json(items)
@@ -26,7 +26,7 @@ export const getAllPortfolio = async (req, res) => {
 }
 
 // GET /api/portfolio/:id
-export const getPortfolioById = async (req, res) => {
+const getPortfolioById = async (req, res) => {
     try {
         const item = await Portfolio.findById(req.params.id)
         if (!item) return res.status(404).json({ message: 'Project not found' })
@@ -38,7 +38,7 @@ export const getPortfolioById = async (req, res) => {
 
 // POST /api/portfolio  (admin) — multipart/form-data
 // files: "images" (max 10), "videos" (max 2)
-export const createPortfolio = async (req, res) => {
+const createPortfolio = async (req, res) => {
     try {
         const { title, description, link, category, client } = req.body
         if (!title || !description) {
@@ -65,7 +65,7 @@ export const createPortfolio = async (req, res) => {
 // PATCH /api/portfolio/:id  (admin)
 // existingImages / existingVideos = JSON array jo rakhni hain (baaki Cloudinary se delete ho jayengi)
 // images / videos files = nayi files jo add karni hain
-export const updatePortfolio = async (req, res) => {
+const updatePortfolio = async (req, res) => {
     try {
         const item = await Portfolio.findById(req.params.id)
         if (!item) return res.status(404).json({ message: 'Project not found' })
@@ -109,7 +109,7 @@ export const updatePortfolio = async (req, res) => {
 }
 
 // DELETE /api/portfolio/:id  (admin)
-export const deletePortfolio = async (req, res) => {
+const deletePortfolio = async (req, res) => {
     try {
         const item = await Portfolio.findById(req.params.id)
         if (!item) return res.status(404).json({ message: 'Project not found' })
@@ -122,4 +122,12 @@ export const deletePortfolio = async (req, res) => {
     } catch (err) {
         res.status(500).json({ message: err.message })
     }
+}
+
+module.exports = {
+    getAllPortfolio,
+    getPortfolioById,
+    createPortfolio,
+    updatePortfolio,
+    deletePortfolio,
 }

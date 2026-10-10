@@ -1,8 +1,8 @@
-import Review from '../models/Review.js'
+const Review = require('../models/Review')
 
 // GET /api/reviews?page=1&limit=6   (public)
 // Response: { reviews, total, average, breakdown: {1..5}, page, pages }
-export const getReviews = async (req, res) => {
+const getReviews = async (req, res) => {
   try {
     const page = Math.max(parseInt(req.query.page) || 1, 1)
     const limit = Math.min(Math.max(parseInt(req.query.limit) || 6, 1), 50)
@@ -32,7 +32,7 @@ export const getReviews = async (req, res) => {
 }
 
 // POST /api/reviews  (logged-in user)
-export const createReview = async (req, res) => {
+const createReview = async (req, res) => {
   try {
     const { title, role, quote, rating } = req.body
     const stars = Number(rating)
@@ -57,7 +57,7 @@ export const createReview = async (req, res) => {
 }
 
 // DELETE /api/reviews/:id  (admin only)
-export const deleteReview = async (req, res) => {
+const deleteReview = async (req, res) => {
   try {
     const review = await Review.findByIdAndDelete(req.params.id)
     if (!review) return res.status(404).json({ message: 'Review not found' })
@@ -66,3 +66,5 @@ export const deleteReview = async (req, res) => {
     res.status(500).json({ message: err.message })
   }
 }
+
+module.exports = { getReviews, createReview, deleteReview }

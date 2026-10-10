@@ -1,14 +1,14 @@
-import express from 'express'
-import {
+const express = require('express')
+const {
     getAllPortfolio,
     getPortfolioById,
     createPortfolio,
     updatePortfolio,
     deletePortfolio,
-} from '../controllers/portfolioController.js'
+} = require('../controllers/portfolioController')
 
-import { protect, adminOnly } from '../middleware/auth.js'
-import { uploadPortfolioMedia } from '../middleware/upload.js'
+const { protect, adminOnly } = require('../middleware/auth')
+const { uploadPortfolioMedia } = require('../middleware/upload')
 
 const router = express.Router()
 
@@ -21,4 +21,4 @@ router.post('/', protect, adminOnly, uploadPortfolioMedia, createPortfolio)
 router.patch('/:id', protect, adminOnly, uploadPortfolioMedia, updatePortfolio)
 router.delete('/:id', protect, adminOnly, deletePortfolio)
 
-export default router
+module.exports = router

@@ -1,8 +1,8 @@
-import BlogPost from '../models/BlogPost.js'
-import { uploadToCloudinary, deleteFromCloudinary } from '../utils/cloudinaryUpload.js'
+const BlogPost = require('../models/BlogPost')
+const { uploadToCloudinary, deleteFromCloudinary } = require('../utils/cloudinaryUpload')
 
 // GET /api/blogs
-export const getAllBlogs = async (req, res) => {
+const getAllBlogs = async (req, res) => {
     try {
         const blogs = await BlogPost.find().sort({ createdAt: -1 })
         res.json(blogs)
@@ -12,7 +12,7 @@ export const getAllBlogs = async (req, res) => {
 }
 
 // GET /api/blogs/:id
-export const getBlogById = async (req, res) => {
+const getBlogById = async (req, res) => {
     try {
         const blog = await BlogPost.findById(req.params.id)
         if (!blog) return res.status(404).json({ message: 'Blog not found' })
@@ -23,7 +23,7 @@ export const getBlogById = async (req, res) => {
 }
 
 // POST /api/blogs  (admin) — multipart/form-data, image field: "image"
-export const createBlog = async (req, res) => {
+const createBlog = async (req, res) => {
     try {
         const { title, content, author } = req.body
         if (!title || !content) {
@@ -42,7 +42,7 @@ export const createBlog = async (req, res) => {
 
 // PATCH /api/blogs/:id  (admin)
 // Nayi image bheji to purani delete hoke nayi lagegi. removeImage="true" bheja to image hat jayegi.
-export const updateBlog = async (req, res) => {
+const updateBlog = async (req, res) => {
     try {
         const blog = await BlogPost.findById(req.params.id)
         if (!blog) return res.status(404).json({ message: 'Blog not found' })
@@ -69,7 +69,7 @@ export const updateBlog = async (req, res) => {
 }
 
 // DELETE /api/blogs/:id  (admin)
-export const deleteBlog = async (req, res) => {
+const deleteBlog = async (req, res) => {
     try {
         const blog = await BlogPost.findById(req.params.id)
         if (!blog) return res.status(404).json({ message: 'Blog not found' })
@@ -83,7 +83,7 @@ export const deleteBlog = async (req, res) => {
 }
 
 // POST /api/blogs/:id/like
-export const likeBlog = async (req, res) => {
+const likeBlog = async (req, res) => {
     try {
         const blog = await BlogPost.findByIdAndUpdate(
             req.params.id,
@@ -98,7 +98,7 @@ export const likeBlog = async (req, res) => {
 }
 
 // POST /api/blogs/:id/comment
-export const addComment = async (req, res) => {
+const addComment = async (req, res) => {
     try {
         const { text } = req.body
         const name = req.user.name // Comes from the 'protect' middleware
@@ -115,4 +115,14 @@ export const addComment = async (req, res) => {
     } catch (err) {
         res.status(500).json({ message: err.message })
     }
+}
+
+module.exports = {
+    getAllBlogs,
+    getBlogById,
+    createBlog,
+    updateBlog,
+    deleteBlog,
+    likeBlog,
+    addComment,
 }

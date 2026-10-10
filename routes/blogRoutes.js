@@ -1,5 +1,5 @@
-import express from 'express'
-import {
+const express = require('express')
+const {
     getAllBlogs,
     getBlogById,
     createBlog,
@@ -7,10 +7,10 @@ import {
     deleteBlog,
     likeBlog,
     addComment,
-} from '../controllers/blogController.js'
+} = require('../controllers/blogController')
 
-import { protect, adminOnly } from '../middleware/auth.js'
-import { uploadBlogImage } from '../middleware/upload.js'
+const { protect, adminOnly } = require('../middleware/auth')
+const { uploadBlogImage } = require('../middleware/upload')
 
 const router = express.Router()
 
@@ -27,4 +27,4 @@ router.delete('/:id', protect, adminOnly, deleteBlog)
 router.post('/:id/like', likeBlog)
 router.post('/:id/comment', protect, addComment)
 
-export default router
+module.exports = router

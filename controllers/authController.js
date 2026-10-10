@@ -1,12 +1,12 @@
-import bcrypt from 'bcryptjs'
-import jwt from 'jsonwebtoken'
-import User from '../models/User.js'
+const bcrypt = require('bcryptjs')
+const jwt = require('jsonwebtoken')
+const User = require('../models/User')
 
 const signToken = (payload) =>
   jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '7d' })
 
 // POST /api/auth/register
-export const registerUser = async (req, res) => {
+const registerUser = async (req, res) => {
   try {
     const { name, email, password } = req.body
     if (!name || !email || !password) {
@@ -26,7 +26,7 @@ export const registerUser = async (req, res) => {
 }
 
 // POST /api/auth/login
-export const loginUser = async (req, res) => {
+const loginUser = async (req, res) => {
   try {
     const { email, password } = req.body
     if (!email || !password) {
@@ -46,7 +46,7 @@ export const loginUser = async (req, res) => {
 }
 
 // POST /api/auth/admin/login
-export const loginAdmin = (req, res) => {
+const loginAdmin = (req, res) => {
   const { email, password } = req.body
   if (email !== process.env.ADMIN_EMAIL || password !== process.env.ADMIN_PASSWORD) {
     return res.status(401).json({ message: 'Invalid admin credentials' })
@@ -56,6 +56,8 @@ export const loginAdmin = (req, res) => {
 }
 
 // GET /api/auth/me
-export const getMe = (req, res) => {
+const getMe = (req, res) => {
   res.json(req.user)
 }
+
+module.exports = { registerUser, loginUser, loginAdmin, getMe }

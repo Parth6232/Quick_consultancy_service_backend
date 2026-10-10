@@ -1,4 +1,4 @@
-import { v2 as cloudinary } from 'cloudinary'
+const cloudinary = require('cloudinary').v2
 
 // dotenv.config() server.js me already chal chuka hota hai
 cloudinary.config({
@@ -8,4 +8,4 @@ cloudinary.config({
     secure: true,
 })
 
-export default cloudinary
+module.exports = cloudinary

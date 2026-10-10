@@ -1,6 +1,6 @@
-import express from 'express'
-import { getReviews, createReview, deleteReview } from '../controllers/reviewController.js'
-import { protect, adminOnly } from '../middleware/auth.js'
+const express = require('express')
+const { getReviews, createReview, deleteReview } = require('../controllers/reviewController')
+const { protect, adminOnly } = require('../middleware/auth')
 
 const router = express.Router()
 
@@ -8,4 +8,4 @@ router.get('/', getReviews)
 router.post('/', protect, createReview)
 router.delete('/:id', protect, adminOnly, deleteReview)
 
-export default router
+module.exports = router

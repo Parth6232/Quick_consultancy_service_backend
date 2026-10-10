@@ -1,4 +1,4 @@
-import multer from 'multer'
+const multer = require('multer')
 
 const MAX_FILE_SIZE = 50 * 1024 * 1024 // 50 MB per file (video ke liye)
 
@@ -27,12 +27,14 @@ const handle = (multerMiddleware) => (req, res, next) => {
 }
 
 // Blog: ek cover image (form field name: "image")
-export const uploadBlogImage = handle(upload.single('image'))
+const uploadBlogImage = handle(upload.single('image'))
 
 // Portfolio: max 10 images (field "images") + max 2 videos (field "videos")
-export const uploadPortfolioMedia = handle(
+const uploadPortfolioMedia = handle(
     upload.fields([
         { name: 'images', maxCount: 10 },
         { name: 'videos', maxCount: 2 },
     ])
 )
+
+module.exports = { uploadBlogImage, uploadPortfolioMedia }

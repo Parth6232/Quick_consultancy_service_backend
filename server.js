@@ -1,19 +1,14 @@
-import express from 'express'
-import cors from 'cors'
-import dotenv from 'dotenv'
-import path from 'path'
-import { fileURLToPath } from 'url'
-import connectDB from './config/db.js'
-import blogRoutes from './routes/blogRoutes.js'
-import portfolioRoutes from './routes/portfolioRoutes.js'
-import authRoutes from './routes/authRoutes.js'
-import reviewRoutes from './routes/reviewRoutes.js'
+require('dotenv').config()
+const express = require('express')
+const cors = require('cors')
+const path = require('path')
+const connectDB = require('./config/db')
+const blogRoutes = require('./routes/blogRoutes')
+const portfolioRoutes = require('./routes/portfolioRoutes')
+const authRoutes = require('./routes/authRoutes')
+const reviewRoutes = require('./routes/reviewRoutes')
 
-dotenv.config()
 connectDB()
-
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = path.dirname(__filename)
 
 const app = express()
 

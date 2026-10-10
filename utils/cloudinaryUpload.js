@@ -1,9 +1,9 @@
-import cloudinary from '../config/cloudinary.js'
+const cloudinary = require('../config/cloudinary')
 
 const MAX_IMAGE_SIZE = 10 * 1024 * 1024 // 10 MB (Cloudinary free plan limit)
 
 // Memory me aayi file (buffer) ko Cloudinary pe upload karta hai, secure URL return karta hai
-export const uploadToCloudinary = (file, folder) => {
+const uploadToCloudinary = (file, folder) => {
     const isVideo = file.mimetype.startsWith('video/')
 
     if (!isVideo && file.size > MAX_IMAGE_SIZE) {
@@ -20,12 +20,12 @@ export const uploadToCloudinary = (file, folder) => {
 }
 
 // Ek saath kai files upload
-export const uploadManyToCloudinary = (files = [], folder) =>
+const uploadManyToCloudinary = (files = [], folder) =>
     Promise.all(files.map((f) => uploadToCloudinary(f, folder)))
 
 // Cloudinary URL se public_id nikal kar file delete karta hai
 // URL format: https://res.cloudinary.com/<cloud>/<image|video>/upload/v123/qcs/blog/abc.jpg
-export const deleteFromCloudinary = async (url) => {
+const deleteFromCloudinary = async (url) => {
     if (!url || !url.includes('res.cloudinary.com')) return // purane external URLs ko ignore
     const match = url.match(/\/(image|video)\/upload\/(?:v\d+\/)?(.+)\.[^./]+$/)
     if (!match) return
@@ -37,5 +37,12 @@ export const deleteFromCloudinary = async (url) => {
     }
 }
 
-export const deleteManyFromCloudinary = (urls = []) =>
+const deleteManyFromCloudinary = (urls = []) =>
     Promise.all(urls.map((u) => deleteFromCloudinary(u)))
+
+module.exports = {
+    uploadToCloudinary,
+    uploadManyToCloudinary,
+    deleteFromCloudinary,
+    deleteManyFromCloudinary,
+}

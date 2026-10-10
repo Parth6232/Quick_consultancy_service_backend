@@ -1,9 +1,7 @@
-import mongoose from 'mongoose'
-import dotenv from 'dotenv'
-import BlogPost from './models/BlogPost.js'
-import Portfolio from './models/Portfolio.js'
-
-dotenv.config()
+require('dotenv').config()
+const mongoose = require('mongoose')
+const BlogPost = require('./models/BlogPost')
+const Portfolio = require('./models/Portfolio')
 
 const blogs = [
   {
