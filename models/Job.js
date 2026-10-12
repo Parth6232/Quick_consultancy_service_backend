@@ -14,6 +14,7 @@ const jobSchema = new mongoose.Schema(
         salary: { type: String, default: '', trim: true },            // optional
         description: { type: String, required: true },
         skills: { type: [String], default: [] },
+        coverImage: { type: String, default: '' },                    // Cloudinary URL (optional)
         isActive: { type: Boolean, default: true }, // false = applications band
     },
     { timestamps: true }

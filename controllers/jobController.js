@@ -1,4 +1,5 @@
 const Job = require('../models/Job')
+const { uploadToCloudinary, deleteFromCloudinary } = require('../utils/cloudinaryUpload')
 
 // "skills" array ya comma-separated string, dono accept karta hai
 const parseSkills = (value) => {
@@ -39,23 +40,37 @@ const getJobById = async (req, res) => {
 }
 
 // POST /api/jobs  (admin)
+// multipart/form-data (cover image ke saath) ya normal JSON — dono chalte hain
+// cover image ka field name: "coverImage"
 const createJob = async (req, res) => {
     try {
         const { title, department, location, jobType, experience, salary, description, skills } = req.body
         if (!title || !description) {
             return res.status(400).json({ message: 'Title and description are required' })
         }
-        const job = await Job.create({
-            title, department, location, jobType, experience, salary, description,
-            skills: parseSkills(skills),
-        })
-        res.status(201).json(job)
+
+        let coverImage = ''
+        if (req.file) coverImage = await uploadToCloudinary(req.file, 'jobs')
+
+        try {
+            const job = await Job.create({
+                title, department, location, jobType, experience, salary, description,
+                skills: parseSkills(skills),
+                coverImage,
+            })
+            res.status(201).json(job)
+        } catch (err) {
+            await deleteFromCloudinary(coverImage) // job save na hui to uploaded image hata do
+            throw err
+        }
     } catch (err) {
         res.status(500).json({ message: err.message })
     }
 }
 
 // PATCH /api/jobs/:id  (admin) — edit ya isActive true/false karke open/close
+// Nayi coverImage file aaye to purani replace hogi.
+// removeCoverImage="true" bheja to cover image hat jayegi.
 const updateJob = async (req, res) => {
     try {
         const job = await Job.findById(req.params.id)
@@ -68,7 +83,26 @@ const updateJob = async (req, res) => {
         const skills = parseSkills(req.body.skills)
         if (skills !== undefined) job.skills = skills
 
-        await job.save()
+        const oldImage = job.coverImage
+        let newImage = null
+
+        if (req.file) {
+            newImage = await uploadToCloudinary(req.file, 'jobs')
+            job.coverImage = newImage
+        } else if (req.body.removeCoverImage === 'true' || req.body.removeCoverImage === true) {
+            job.coverImage = ''
+        }
+
+        try {
+            await job.save()
+        } catch (err) {
+            if (newImage) await deleteFromCloudinary(newImage) // save fail hua to nayi upload hata do
+            throw err
+        }
+
+        // save ho gaya, ab purani image Cloudinary se hata sakte hain
+        if (oldImage && oldImage !== job.coverImage) await deleteFromCloudinary(oldImage)
+
         res.json(job)
     } catch (err) {
         res.status(500).json({ message: err.message })
@@ -81,7 +115,11 @@ const deleteJob = async (req, res) => {
     try {
         const job = await Job.findById(req.params.id)
         if (!job) return res.status(404).json({ message: 'Job not found' })
+
+        const image = job.coverImage
         await job.deleteOne()
+        await deleteFromCloudinary(image) // job ki cover image Cloudinary se bhi hatao
+
         res.json({ message: 'Job deleted' })
     } catch (err) {
         res.status(500).json({ message: err.message })

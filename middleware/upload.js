@@ -57,7 +57,10 @@ const uploadPortfolioMedia = handle(
     ])
 )
 
+// Career: job ki ek cover image (form field name: "coverImage")
+const uploadJobImage = handle(upload.single('coverImage'))
+
 // Career: job application ka ek resume (form field name: "resume")
 const uploadResume = handle(resumeUpload.single('resume'), '5MB')
 
-module.exports = { uploadBlogImage, uploadPortfolioMedia, uploadResume }
+module.exports = { uploadBlogImage, uploadPortfolioMedia, uploadJobImage, uploadResume }
