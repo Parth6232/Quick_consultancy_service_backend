@@ -15,6 +15,9 @@ const blogPostSchema = new mongoose.Schema(
         image: { type: String, default: '' },
         author: { type: String, default: 'Quick Consulting Team' },
         likes: { type: Number, default: 0 },
+        // Kis-kis ne like kiya (user id, admin ke liye "admin"). Ek user = ek like.
+        // select:false => ye list public API response me kabhi nahi jaati (privacy)
+        likedBy: { type: [String], default: [], select: false },
         comments: [commentSchema],
     },
     { timestamps: true }

@@ -9,22 +9,22 @@ const {
     addComment,
 } = require('../controllers/blogController')
 
-const { protect, adminOnly } = require('../middleware/auth')
+const { protect, optionalAuth, adminOnly } = require('../middleware/auth')
 const { uploadBlogImage } = require('../middleware/upload')
 
 const router = express.Router()
 
-// Public
-router.get('/', getAllBlogs)
-router.get('/:id', getBlogById)
+// Public (login ho to "likedByUser" bhi milta hai)
+router.get('/', optionalAuth, getAllBlogs)
+router.get('/:id', optionalAuth, getBlogById)
 
 // Admin only
 router.post('/', protect, adminOnly, uploadBlogImage, createBlog)
 router.patch('/:id', protect, adminOnly, uploadBlogImage, updateBlog)
 router.delete('/:id', protect, adminOnly, deleteBlog)
 
-// Logged-in users
-router.post('/:id/like', likeBlog)
+// Logged-in users (admin bhi)
+router.post('/:id/like', protect, likeBlog) // toggle: like / unlike
 router.post('/:id/comment', protect, addComment)
 
 module.exports = router

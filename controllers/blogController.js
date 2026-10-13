@@ -1,11 +1,30 @@
+const mongoose = require('mongoose')
 const BlogPost = require('../models/BlogPost')
 const { uploadToCloudinary, deleteFromCloudinary } = require('../utils/cloudinaryUpload')
+
+// Like ke liye user ki pehchaan: normal user = uska id, admin = "admin"
+// (admin ke token me id nahi hota, aur admin sirf ek hi hai)
+const getUserKey = (user) => {
+    if (!user) return null
+    if (user.id) return String(user.id)
+    if (user.role === 'admin') return 'admin'
+    return null
+}
+
+// Response me likedBy (users ki list) kabhi nahi bhejte, sirf "likedByUser: true/false"
+const withLikeState = (blog, likedByUser) => {
+    const obj = typeof blog.toObject === 'function' ? blog.toObject() : { ...blog }
+    delete obj.likedBy
+    obj.likedByUser = likedByUser
+    return obj
+}
 
 // GET /api/blogs
 const getAllBlogs = async (req, res) => {
     try {
-        const blogs = await BlogPost.find().sort({ createdAt: -1 })
-        res.json(blogs)
+        const key = getUserKey(req.user)
+        const blogs = await BlogPost.find().select('+likedBy').sort({ createdAt: -1 }).lean()
+        res.json(blogs.map((b) => withLikeState(b, key ? (b.likedBy || []).includes(key) : false)))
     } catch (err) {
         res.status(500).json({ message: err.message })
     }
@@ -14,9 +33,13 @@ const getAllBlogs = async (req, res) => {
 // GET /api/blogs/:id
 const getBlogById = async (req, res) => {
     try {
-        const blog = await BlogPost.findById(req.params.id)
+        if (!mongoose.isValidObjectId(req.params.id)) {
+            return res.status(404).json({ message: 'Blog not found' })
+        }
+        const key = getUserKey(req.user)
+        const blog = await BlogPost.findById(req.params.id).select('+likedBy')
         if (!blog) return res.status(404).json({ message: 'Blog not found' })
-        res.json(blog)
+        res.json(withLikeState(blog, key ? (blog.likedBy || []).includes(key) : false))
     } catch (err) {
         res.status(500).json({ message: err.message })
     }
@@ -82,16 +105,44 @@ const deleteBlog = async (req, res) => {
     }
 }
 
-// POST /api/blogs/:id/like
+// POST /api/blogs/:id/like  (login zaroori) — TOGGLE
+// Ek user ek blog ko sirf ek baar like kar sakta hai. Dobara click => unlike.
+// Dono updates atomic hain, isliye tez/double click par bhi count galat nahi hota.
 const likeBlog = async (req, res) => {
     try {
-        const blog = await BlogPost.findByIdAndUpdate(
-            req.params.id,
-            { $inc: { likes: 1 } },
+        const { id } = req.params
+        if (!mongoose.isValidObjectId(id)) return res.status(404).json({ message: 'Blog not found' })
+
+        const key = getUserKey(req.user)
+        if (!key) return res.status(401).json({ message: 'Please log in to like this post' })
+
+        // 1) Pehle like karne ki koshish — sirf tab jab is user ne abhi tak like nahi kiya
+        let liked = true
+        let blog = await BlogPost.findOneAndUpdate(
+            { _id: id, likedBy: { $ne: key } },
+            { $addToSet: { likedBy: key }, $inc: { likes: 1 } },
             { new: true }
         )
+
+        // 2) Pehle se like kiya hua hai => unlike
+        if (!blog) {
+            liked = false
+            blog = await BlogPost.findOneAndUpdate(
+                { _id: id, likedBy: key },
+                { $pull: { likedBy: key }, $inc: { likes: -1 } },
+                { new: true }
+            )
+        }
+
         if (!blog) return res.status(404).json({ message: 'Blog not found' })
-        res.json(blog)
+
+        // Safety: purane data ki wajah se likes kabhi 0 se neeche na jaye
+        if (blog.likes < 0) {
+            await BlogPost.updateOne({ _id: id, likes: { $lt: 0 } }, { $set: { likes: 0 } })
+            blog.likes = 0
+        }
+
+        res.json(withLikeState(blog, liked))
     } catch (err) {
         res.status(500).json({ message: err.message })
     }
