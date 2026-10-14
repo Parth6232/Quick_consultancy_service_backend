@@ -15,6 +15,20 @@ const parseList = (value) => {
     }
 }
 
+// "imageOrder" = final order of ALL images, as a JSON array of tokens:
+//   - an existing image URL (jo is project ki already hai), ya
+//   - "new:0", "new:1" ... = nayi upload hui files (req.files.images ka index)
+// Galat JSON aaye to null return karta hai (taaki galti se saari images delete na ho)
+const parseOrder = (value) => {
+    if (value === undefined) return undefined
+    try {
+        const parsed = JSON.parse(value)
+        return Array.isArray(parsed) ? parsed : null
+    } catch {
+        return null
+    }
+}
+
 // GET /api/portfolio
 const getAllPortfolio = async (req, res) => {
     try {
@@ -65,10 +79,18 @@ const createPortfolio = async (req, res) => {
 // PATCH /api/portfolio/:id  (admin)
 // existingImages / existingVideos = JSON array jo rakhni hain (baaki Cloudinary se delete ho jayengi)
 // images / videos files = nayi files jo add karni hain
+// imageOrder (optional) = images ka FINAL order (existing URLs + "new:<index>"), isse cover/order
+//   bhi control hota hai aur kisi purani image ko crop karke usi jagah replace kiya ja sakta hai.
+//   imageOrder na bheja jaye to purana tareeka: pehle existingImages, phir nayi files.
 const updatePortfolio = async (req, res) => {
     try {
         const item = await Portfolio.findById(req.params.id)
         if (!item) return res.status(404).json({ message: 'Project not found' })
+
+        const imageOrder = parseOrder(req.body.imageOrder)
+        if (imageOrder === null) {
+            return res.status(400).json({ message: 'imageOrder must be a valid JSON array' })
+        }
 
         const { title, description, link, category, client } = req.body
         if (title !== undefined) item.title = title
@@ -80,14 +102,9 @@ const updatePortfolio = async (req, res) => {
         // Purani legacy `image` wali entry ho to usko images array me le aao
         const currentImages = item.images.length ? item.images : (item.image ? [item.image] : [])
 
-        const keepImages = parseList(req.body.existingImages) ?? currentImages
         const keepVideos = parseList(req.body.existingVideos) ?? item.videos
-
         // Sirf wahi URLs rakho jo pehle se is project ke the (security)
-        const validImages = keepImages.filter((u) => currentImages.includes(u))
         const validVideos = keepVideos.filter((u) => item.videos.includes(u))
-
-        const removedImages = currentImages.filter((u) => !validImages.includes(u))
         const removedVideos = item.videos.filter((u) => !validVideos.includes(u))
 
         const [newImages, newVideos] = await Promise.all([
@@ -95,7 +112,35 @@ const updatePortfolio = async (req, res) => {
             uploadManyToCloudinary(req.files?.videos, 'portfolio/videos'),
         ])
 
-        item.images = [...validImages, ...newImages]
+        let finalImages
+        if (imageOrder) {
+            // imageOrder hi final order hai
+            const usedNew = new Set()
+            finalImages = []
+            for (const token of imageOrder) {
+                if (typeof token !== 'string') continue
+                if (token.startsWith('new:')) {
+                    const i = Number(token.slice(4))
+                    if (Number.isInteger(i) && newImages[i] && !usedNew.has(i)) {
+                        finalImages.push(newImages[i])
+                        usedNew.add(i)
+                    }
+                } else if (currentImages.includes(token) && !finalImages.includes(token)) {
+                    finalImages.push(token)
+                }
+            }
+            // order me jo nayi file mention nahi hui, use end me jod do (upload kabhi lost nahi hoga)
+            newImages.forEach((u, i) => { if (!usedNew.has(i)) finalImages.push(u) })
+        } else {
+            const keepImages = parseList(req.body.existingImages) ?? currentImages
+            const validImages = keepImages.filter((u) => currentImages.includes(u))
+            finalImages = [...validImages, ...newImages]
+        }
+
+        // jo purani images final list me nahi hain, wo Cloudinary se hatayenge
+        const removedImages = currentImages.filter((u) => !finalImages.includes(u))
+
+        item.images = finalImages
         item.videos = [...validVideos, ...newVideos]
         item.image = item.images[0] || ''
 
